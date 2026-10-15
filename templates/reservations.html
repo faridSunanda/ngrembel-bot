@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <h3><span>📅</span> Manajemen Reservasi Wisata Ngrembel Asri</h3>
+    <span style="font-size: 13px; color: #64748b;">Total: <b>{{ reservations | length }}</b> Reservasi</span>
+  </div>
+  <div class="card-body">
+    <!-- Filter Bar & Search -->
+    <div class="filter-bar">
+      <div class="filter-tabs">
+        <a href="/reservations?status_filter=ALL{% if search_query %}&q={{ search_query }}{% endif %}" class="tab-btn {% if current_filter == 'ALL' %}active{% endif %}">
+          Semua
+        </a>
+        <a href="/reservations?status_filter=PENDING{% if search_query %}&q={{ search_query }}{% endif %}" class="tab-btn {% if current_filter == 'PENDING' %}active{% endif %}">
+          ⏳ Pending
+        </a>
+        <a href="/reservations?status_filter=PAID{% if search_query %}&q={{ search_query }}{% endif %}" class="tab-btn {% if current_filter == 'PAID' %}active{% endif %}">
+          💵 Cek Bukti
+        </a>
+        <a href="/reservations?status_filter=CONFIRMED{% if search_query %}&q={{ search_query }}{% endif %}" class="tab-btn {% if current_filter == 'CONFIRMED' %}active{% endif %}">
+          ✅ Dikonfirmasi
+        </a>
+        <a href="/reservations?status_filter=COMPLETED{% if search_query %}&q={{ search_query }}{% endif %}" class="tab-btn {% if current_filter == 'COMPLETED' %}active{% endif %}">
+          🎉 Selesai
+        </a>
+        <a href="/reservations?status_filter=REJECTED{% if search_query %}&q={{ search_query }}{% endif %}" class="tab-btn {% if current_filter == 'REJECTED' %}active{% endif %}">
+          ❌ Ditolak
+        </a>
+      </div>
+
+      <form method="GET" action="/reservations" class="search-box">
+        <input type="hidden" name="status_filter" value="{{ current_filter }}">
+        <span style="color: #94a3b8; font-size: 16px;">🔍</span>
+        <input type="text" name="q" placeholder="Cari kode booking / nama / HP..." value="{{ search_query }}">
+        {% if search_query %}
+        <a href="/reservations?status_filter={{ current_filter }}" style="color: #94a3b8; text-decoration: none; font-size: 14px; margin-left: 6px;">✕</a>
+        {% endif %}
+      </form>
+    </div>
+
+    <!-- Table -->
+    <div class="table-responsive">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th>Kode Booking</th>
+            <th>Tgl Kunjungan</th>
+            <th>Pemesan</th>
+            <th>Paket & Qty</th>
+            <th>Total Harga</th>
+            <th>Bukti Bayar</th>
+            <th>Status</th>
+            <th style="text-align: right;">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in reservations %}
+          <tr>
+            <td>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="font-family: monospace; font-weight: 700; color: #064e3b; font-size: 14px;">{{ r.booking_code }}</span>
+                <button type="button" class="btn btn-secondary btn-sm btn-copy" data-copy="{{ r.booking_code }}" style="padding: 2px 6px; font-size: 10px;" title="Salin kode">📋</button>
+              </div>
+              <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">ID Tele: {{ r.user_id }}</div>
+            </td>
+            <td>
+              <span style="font-weight: 600; color: #1e293b;">{{ r.visit_date }}</span>
+            </td>
+            <td>
+              <div style="font-weight: 600; color: #0f172a;">{{ r.user_name }}</div>
+              <div style="font-size: 12px; display: flex; align-items: center; gap: 4px; margin-top: 2px;">
+                <span style="color: #64748b;">{{ r.user_phone }}</span>
+                {% set phone_clean = r.user_phone.replace(' ', '').replace('-', '').replace('+', '') %}
+                {% if phone_clean.startswith('0') %}
+                  {% set wa_num = '62' + phone_clean[1:] %}
+                {% else %}
+                  {% set wa_num = phone_clean %}
+                {% endif %}
+                <a href="https://wa.me/{{ wa_num }}?text=Halo%20{{ r.user_name }}%20dari%20Wisata%20Ngrembel%20Asri%20Semarang" target="_blank" style="color: #16a34a; text-decoration: none;" title="Chat WhatsApp">💬</a>
+              </div>
+            </td>
+            <td>
+              <div style="font-weight: 500;">{{ r.ticket_name }}</div>
+              <div style="font-size: 12px; color: #059669; font-weight: 600;">👥 {{ r.ticket_qty }} Orang</div>
+            </td>
+            <td>
+              <span style="font-weight: 800; color: #064e3b; font-size: 15px;">
+                Rp {{ "{:,.0f}".format(r.payment_amount or r.total_price).replace(",", ".") }}
+              </span>
+              {% if r.casaku_trx_id %}
+              <div style="font-size: 11px; color: #0284c7; font-family: monospace;" title="Casaku Transaction ID">⚡️ {{ r.casaku_trx_id[:16] }}...</div>
+              {% endif %}
+            </td>
+            <td>
+              {% if r.payment_proof %}
+              <a href="/static/uploads/{{ r.payment_proof }}" target="_blank">
+                <img src="/static/uploads/{{ r.payment_proof }}" style="width: 44px; height: 44px; object-fit: cover; border-radius: 6px; border: 1px solid #cbd5e1;" title="Lihat bukti pembayaran">
+              </a>
+              {% else %}
+              <span style="font-size: 11px; color: #94a3b8; font-style: italic;">Belum ada</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if r.status == 'PENDING' %}
+              <span class="badge badge-pending">⏳ Pending</span>
+              {% elif r.status == 'PAID' %}
+              <span class="badge badge-paid">💵 Cek Bukti</span>
+              {% elif r.status == 'CONFIRMED' %}
+              <span class="badge badge-confirmed">✅ Dikonfirmasi</span>
+              {% elif r.status == 'COMPLETED' %}
+              <span class="badge badge-completed">🎉 Selesai</span>
+              {% else %}
+              <span class="badge badge-rejected">❌ Ditolak</span>
+              {% endif %}
+            </td>
+            <td style="text-align: right;">
+              <div style="display: flex; gap: 6px; justify-content: flex-end; align-items: center;">
+                {% if r.status in ['CONFIRMED', 'COMPLETED'] %}
+                <a href="/reservations/{{ r.id }}/invoice" target="_blank" class="btn btn-secondary btn-sm" style="background: #ecfdf5; color: #064e3b; border: 1px solid #a7f3d0; text-decoration: none;" title="Lihat / Unduh E-Tiket Resmi">
+                  🎫 E-Tiket
+                </a>
+                {% endif %}
+                <button type="button" class="btn btn-primary btn-sm btn-detail" data-id="{{ r.id }}" title="Lihat detail & ubah status">
+                  Detail / Status
+                </button>
+                <form method="POST" action="/reservations/delete/{{ r.id }}" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data reservasi ini?')">
+                  <button type="submit" class="btn btn-danger btn-sm" title="Hapus reservasi">🗑</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="8" style="text-align: center; padding: 48px; color: #94a3b8;">
+              Tidak ada data reservasi yang sesuai dengan filter ini.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Detail & Update Status Reservasi -->
+<div class="modal-backdrop" id="reservationDetailModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3>Detail Reservasi & Ubah Status</h3>
+      <button type="button" class="modal-close" data-close-modal="reservationDetailModal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div style="background: #f8fafc; border-radius: 10px; padding: 16px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <span style="font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: 600;">Kode Booking:</span>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span id="modalBookingCode" style="font-family: monospace; font-size: 16px; font-weight: 800; color: #065f46;">-</span>
+            <button type="button" id="modalCopyBtn" class="btn btn-secondary btn-sm btn-copy" data-copy="" style="padding: 2px 8px; font-size: 11px;">Salin</button>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 13px;">
+          <div><b>Tgl Kunjungan:</b> <span id="modalVisitDate">-</span></div>
+          <div><b>Paket:</b> <span id="modalTicketName">-</span></div>
+          <div><b>Kategori:</b> <span id="modalTicketCategory">-</span></div>
+          <div><b>Jumlah:</b> <span id="modalQty">-</span></div>
+          <div><b>Total Bayar:</b> <span id="modalTotalPrice" style="font-weight: 700; color: #047857;">-</span></div>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 8px; color: #1e293b;">Data Pelanggan</h4>
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px; margin-bottom: 6px;">
+          <span>Nama Pemesan: <b id="modalUserName">-</b></span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+          <span>No WhatsApp: <b id="modalUserPhone">-</b></span>
+          <a id="modalWhatsAppBtn" href="#" target="_blank" class="btn btn-secondary btn-sm" style="color: #15803d; font-size: 11px; padding: 4px 8px;">
+            💬 Chat via WhatsApp
+          </a>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 8px; color: #1e293b;">Bukti Pembayaran / Transfer</h4>
+        <div id="modalProofContainer">
+          <span style="font-size: 13px; color: #94a3b8;">Belum ada bukti pembayaran diunggah.</span>
+        </div>
+      </div>
+
+      <form id="updateStatusForm" method="POST" action="">
+        <div class="form-group">
+          <label class="form-label" for="modalStatusSelect">Status Reservasi</label>
+          <select class="form-control" id="modalStatusSelect" name="status_val">
+            <option value="PENDING">⏳ PENDING (Menunggu Pembayaran)</option>
+            <option value="PAID">💵 PAID (Pembayaran Masuk - Menunggu Konfirmasi)</option>
+            <option value="CONFIRMED">✅ CONFIRMED (Dikonfirmasi / Tiket Aktif Siap Digunakan)</option>
+            <option value="COMPLETED">🎉 COMPLETED (Pengunjung Sudah Hadir & Selesai)</option>
+            <option value="REJECTED">❌ REJECTED (Reservasi Ditolak / Dibatalkan)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="modalAdminNotes">Catatan Tambahan untuk Pelanggan (Dikirim ke Telegram)</label>
+          <textarea class="form-control" id="modalAdminNotes" name="admin_notes" placeholder="Contoh: Pembayaran valid. Silakan langsung menuju Loket 1 menunjukkan kode booking ini."></textarea>
+          <span style="font-size: 11px; color: #64748b; margin-top: 4px; display: block;">*Setiap perubahan status akan langsung mengirim notifikasi otomatis ke Telegram pemesan.</span>
+        </div>
+
+        <div class="modal-footer" style="padding-left: 0; padding-right: 0; padding-bottom: 0; justify-content: space-between; display: flex; align-items: center;">
+          <div>
+            <a id="modalDownloadTicketBtn" href="#" target="_blank" class="btn btn-secondary" style="background: #ecfdf5; color: #064e3b; border: 1px solid #a7f3d0; text-decoration: none;" title="Buka / Cetak E-Tiket Resmi">
+              🎫 Unduh E-Tiket Resmi
+            </a>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" class="btn btn-secondary" data-close-modal="reservationDetailModal">Tutup</button>
+            <button type="submit" class="btn btn-primary">Simpan & Kirim Notif Telegram ➔</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

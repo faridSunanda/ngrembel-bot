@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+  <div class="card" style="margin-bottom: 0;">
+    <div class="card-header">
+      <h3><span>⚙️</span> Pengaturan Informasi Wisata & Gateway Pembayaran Casaku</h3>
+    </div>
+    <div class="card-body">
+      <form method="POST" action="/settings">
+        <h4 style="font-size: 15px; font-weight: 700; color: #064e3b; margin-bottom: 12px; border-bottom: 2px solid #ecfdf5; padding-bottom: 6px;">
+          ⚡️ Integrasi Payment Gateway Casaku (QRIS Otomatis)
+        </h4>
+
+        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 14px; margin-bottom: 18px; font-size: 12px; color: #166534; line-height: 1.6;">
+          💡 <b>Info Casaku:</b> Dapatkan kredensial di <a href="https://casaku.id" target="_blank" style="color: #047857; font-weight: 700; text-decoration: underline;">casaku.id</a>. Pastikan aplikasi Android <i>Casaku : Gateway Qris</i> sudah aktif di HP dan semua indikator berstatus hijau.
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Casaku License Key (x-license-key) *</label>
+          <input type="text" name="casaku_license_key" class="form-control" value="{{ settings.casaku_license_key or '' }}" placeholder="Contoh: csk_live_xxxx... (dari casaku.id/api-keys)">
+          <span style="font-size: 11px; color: #64748b;">Digunakan untuk autentikasi request generate QRIS dinamis.</span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Casaku QR ID (UUID QRIS Merchant) *</label>
+          <input type="text" name="casaku_qr_id" class="form-control" value="{{ settings.casaku_qr_id or '' }}" placeholder="Contoh: 986b2a0a-5c95-4177-9800-02d84a35338e (dari casaku.id/qris)">
+          <span style="font-size: 11px; color: #64748b;">ID QRIS statis yang telah Anda unggah di dashboard Casaku.</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div class="form-group">
+            <label class="form-label">Sumber Merchant (Package ID) *</label>
+            <select name="casaku_package_id" class="form-control">
+              <option value="id.dana" {% if settings.casaku_package_id == 'id.dana' %}selected{% endif %}>DANA Bisnis (id.dana)</option>
+              <option value="com.gojek.gopaymerchant" {% if settings.casaku_package_id == 'com.gojek.gopaymerchant' %}selected{% endif %}>GoPay Merchant (com.gojek.gopaymerchant)</option>
+              <option value="com.bca.msb" {% if settings.casaku_package_id == 'com.bca.msb' %}selected{% endif %}>BCA Merchant (com.bca.msb)</option>
+              <option value="id.bmri.livinmerchant" {% if settings.casaku_package_id == 'id.bmri.livinmerchant' %}selected{% endif %}>Livin Merchant by Mandiri (id.bmri.livinmerchant)</option>
+              <option value="id.co.bri.merchant" {% if settings.casaku_package_id == 'id.co.bri.merchant' %}selected{% endif %}>BRI Merchant (id.co.bri.merchant)</option>
+              <option value="com.shopee.id" {% if settings.casaku_package_id == 'com.shopee.id' %}selected{% endif %}>ShopeePay (com.shopee.id)</option>
+              <option value="com.orderkuota.app" {% if settings.casaku_package_id == 'com.orderkuota.app' %}selected{% endif %}>Order Kuota (com.orderkuota.app)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Webhook Secret (Opsional)</label>
+            <input type="text" name="casaku_webhook_secret" class="form-control" value="{{ settings.casaku_webhook_secret or '' }}" placeholder="Dari casaku.id/api-keys">
+          </div>
+        </div>
+
+        <div style="margin-bottom: 24px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase;">URL Webhook Casaku Anda:</div>
+              <code style="font-size: 12px; color: #0f172a; font-family: monospace;">/api/webhook/casaku</code>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm" id="btnTestDevice">
+              🧪 Tes Perangkat HP Listener
+            </button>
+          </div>
+          <div id="deviceTestResult" style="margin-top: 8px; font-size: 12px; display: none;"></div>
+        </div>
+
+        <h4 style="font-size: 15px; font-weight: 700; color: #064e3b; margin-top: 24px; margin-bottom: 12px; border-bottom: 2px solid #ecfdf5; padding-bottom: 6px;">
+          🕒 Jadwal Operasional & Lokasi
+        </h4>
+
+        <div class="form-group">
+          <label class="form-label">Jadwal Jam Buka / Operasional *</label>
+          <textarea name="opening_hours" class="form-control" rows="3" required>{{ settings.opening_hours }}</textarea>
+          <span style="font-size: 11px; color: #64748b;">Akan ditampilkan saat pengguna memilih menu <b>🕒 Jadwal Buka</b> di bot Telegram.</span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Alamat Lengkap Wisata Ngrembel Asri *</label>
+          <textarea name="location_address" class="form-control" rows="2" required>{{ settings.location_address }}</textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Link Google Maps *</label>
+          <input type="url" name="maps_url" class="form-control" value="{{ settings.maps_url }}" required>
+          <span style="font-size: 11px; color: #64748b;">Tombol 'Buka Google Maps' di bot Telegram akan mengarahkan ke tautan ini.</span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Kontak Customer Service & WhatsApp *</label>
+          <textarea name="phone_contact" class="form-control" rows="2" required>{{ settings.phone_contact }}</textarea>
+        </div>
+
+        <h4 style="font-size: 15px; font-weight: 700; color: #064e3b; margin-top: 24px; margin-bottom: 12px; border-bottom: 2px solid #ecfdf5; padding-bottom: 6px;">
+          💳 Rekening Bank Cadangan (Fallback Manual)
+        </h4>
+
+        <div class="form-group">
+          <label class="form-label">Daftar Rekening Bank untuk Pembayaran Manual *</label>
+          <textarea name="bank_info" class="form-control" rows="3" required>{{ settings.bank_info }}</textarea>
+          <span style="font-size: 11px; color: #64748b;">Digunakan jika pelanggan memilih transfer manual atau gateway sedang offline.</span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Instruksi Pembayaran Tambahan *</label>
+          <textarea name="qris_info" class="form-control" rows="2" required>{{ settings.qris_info }}</textarea>
+        </div>
+
+        <div style="margin-top: 24px; display: flex; justify-content: flex-end;">
+          <button type="submit" class="btn btn-primary" style="padding: 12px 24px;">
+            💾 Simpan Pengaturan
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Preview Card -->
+  <div style="display: flex; flex-direction: column; gap: 24px;">
+    <div class="card" style="margin-bottom: 0;">
+      <div class="card-header">
+        <h3><span>📱</span> Pratinjau Tampilan di Bot</h3>
+      </div>
+      <div class="card-body" style="background: #0f172a; color: #f8fafc; border-radius: 0 0 16px 16px;">
+        <div style="font-family: monospace; font-size: 12px; line-height: 1.6; white-space: pre-wrap; color: #cbd5e1;">
+🌿 <b>Wisata Ngrembel Asri Semarang</b>
+
+🕒 <b>Jadwal:</b>
+{{ settings.opening_hours }}
+
+📍 <b>Alamat:</b>
+{{ settings.location_address }}
+
+💳 <b>Metode Pembayaran:</b>
+• QRIS Dinamis Otomatis (Casaku)
+• Transfer Bank Manual
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom: 0;">
+      <div class="card-header">
+        <h3><span>ℹ️</span> Status Sistem Casaku</h3>
+      </div>
+      <div class="card-body">
+        <div style="font-size: 13px; color: #475569; line-height: 1.8;">
+          <div><b>Gateway:</b> Casaku API v2 (<code>https://api.casaku.id</code>)</div>
+          <div><b>Status Lisensi:</b> {% if settings.casaku_license_key %}✅ Terisi{% else %}⚠️ Belum diisi{% endif %}</div>
+          <div><b>QR ID:</b> {% if settings.casaku_qr_id %}✅ Terisi{% else %}⚠️ Belum diisi{% endif %}</div>
+          <div><b>Tarif Pengujian:</b> <span style="color: #047857; font-weight: 700;">Under Rp 1.000 Aktif</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const btnTest = document.getElementById("btnTestDevice");
+  const resultDiv = document.getElementById("deviceTestResult");
+  if (btnTest && resultDiv) {
+    btnTest.addEventListener("click", async () => {
+      btnTest.innerText = "⏳ Memeriksa...";
+      resultDiv.style.display = "block";
+      resultDiv.innerHTML = "<span style='color: #64748b;'>Menghubungi server Casaku...</span>";
+      try {
+        const res = await fetch("/api/casaku/test-device");
+        const data = await res.json();
+        if (data.success) {
+          resultDiv.innerHTML = `<span style='color: #15803d; font-weight: 600;'>✅ Server Casaku merespons! Data perangkat: ${JSON.stringify(data.data)}</span>`;
+        } else {
+          resultDiv.innerHTML = `<span style='color: #b91c1c; font-weight: 600;'>⚠️ Status: ${data.error}</span>`;
+        }
+      } catch (err) {
+        resultDiv.innerHTML = `<span style='color: #b91c1c;'>Error koneksi: ${err.message}</span>`;
+      } finally {
+        btnTest.innerText = "🧪 Tes Perangkat HP Listener";
+      }
+    });
+  }
+});
+</script>
+{% endblock %}

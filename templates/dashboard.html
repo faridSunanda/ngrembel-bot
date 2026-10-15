@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Stat Cards Grid -->
+<div class="stats-grid">
+  <div class="stat-card primary">
+    <div class="stat-content">
+      <p>Total Reservasi</p>
+      <h3>{{ stats.total_reservations }}</h3>
+    </div>
+    <div class="stat-icon primary">📅</div>
+  </div>
+
+  <div class="stat-card warning">
+    <div class="stat-content">
+      <p>Menunggu Konfirmasi</p>
+      <h3>{{ stats.pending_reservations }}</h3>
+    </div>
+    <div class="stat-icon warning">⏳</div>
+  </div>
+
+  <div class="stat-card info">
+    <div class="stat-content">
+      <p>Reservasi Aktif</p>
+      <h3>{{ stats.confirmed_reservations }}</h3>
+    </div>
+    <div class="stat-icon info">✅</div>
+  </div>
+
+  <div class="stat-card success">
+    <div class="stat-content">
+      <p>Total Pendapatan Tiket</p>
+      <h3>Rp {{ "{:,.0f}".format(stats.total_revenue).replace(",", ".") }}</h3>
+    </div>
+    <div class="stat-icon success">💰</div>
+  </div>
+</div>
+
+<!-- Quick Actions & Info -->
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 24px;">
+  <div class="card" style="margin-bottom: 0;">
+    <div class="card-header">
+      <h3><span>📋</span> Reservasi Masuk Terbaru</h3>
+      <a href="/reservations" class="btn btn-secondary btn-sm">Lihat Semua ➔</a>
+    </div>
+    <div class="card-body" style="padding: 0;">
+      <div class="table-responsive">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>Kode Booking</th>
+              <th>Pemesan</th>
+              <th>Paket Tiket</th>
+              <th>Tgl Kunjungan</th>
+              <th>Total</th>
+              <th>Status</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in recent_reservations %}
+            <tr>
+              <td>
+                <span style="font-family: monospace; font-weight: 700; color: #065f46;">{{ r.booking_code }}</span>
+              </td>
+              <td>
+                <div style="font-weight: 600;">{{ r.user_name }}</div>
+                <div style="font-size: 12px; color: #64748b;">{{ r.user_phone }}</div>
+              </td>
+              <td>
+                <div>{{ r.ticket_name }}</div>
+                <div style="font-size: 12px; color: #64748b;">{{ r.ticket_qty }} Orang</div>
+              </td>
+              <td>
+                <span style="font-size: 13px; font-weight: 500;">{{ r.visit_date }}</span>
+              </td>
+              <td>
+                <span style="font-weight: 700; color: #0f172a;">Rp {{ "{:,.0f}".format(r.payment_amount or r.total_price).replace(",", ".") }}</span>
+              </td>
+              <td>
+                {% if r.status == 'PENDING' %}
+                <span class="badge badge-pending">⏳ Pending</span>
+                {% elif r.status == 'PAID' %}
+                <span class="badge badge-paid">💵 Cek Bukti</span>
+                {% elif r.status == 'CONFIRMED' %}
+                <span class="badge badge-confirmed">✅ Dikonfirmasi</span>
+                {% elif r.status == 'COMPLETED' %}
+                <span class="badge badge-completed">🎉 Selesai</span>
+                {% else %}
+                <span class="badge badge-rejected">❌ Ditolak</span>
+                {% endif %}
+              </td>
+              <td>
+                <button type="button" class="btn btn-secondary btn-sm btn-detail" data-id="{{ r.id }}" title="Lihat detail">
+                  Detail
+                </button>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="7" style="text-align: center; padding: 40px; color: #94a3b8;">
+                Belum ada data reservasi yang masuk. Pemesanan dari bot Telegram akan langsung muncul di sini.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Side info card -->
+  <div style="display: flex; flex-direction: column; gap: 24px;">
+    <div class="card" style="margin-bottom: 0;">
+      <div class="card-header">
+        <h3><span>🌿</span> Wisata Ngrembel Asri</h3>
+      </div>
+      <div class="card-body">
+        <p style="font-size: 13px; color: #475569; line-height: 1.6; margin-bottom: 16px;">
+          Sistem bot dan manajemen reservasi tiket online aktif. Pengunjung dapat melakukan reservasi mandiri melalui Telegram, memilih tanggal via kalender interaktif, dan menerima kode booking.
+        </p>
+        <div style="background: #f8fafc; border-radius: 10px; padding: 14px; border: 1px solid #e2e8f0; margin-bottom: 16px;">
+          <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Paket Wisata Aktif:</div>
+          <div style="font-size: 20px; font-weight: 800; color: #065f46;">{{ wisata_count }} Pilihan Paket</div>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <a href="/wisata" class="btn btn-primary btn-sm" style="flex: 1;">+ Tambah Paket</a>
+          <a href="/settings" class="btn btn-secondary btn-sm" style="flex: 1;">⚙️ Info Wisata</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom: 0;">
+      <div class="card-header">
+        <h3><span>💡</span> Tips Petugas Loket</h3>
+      </div>
+      <div class="card-body">
+        <ul style="font-size: 13px; color: #475569; line-height: 1.7; padding-left: 18px;">
+          <li>Cocokkan <b>Kode Booking</b> pelanggan saat mereka tiba di loket tiket.</li>
+          <li>Gunakan fitur <b>Ubah Status</b> ke <i>Selesai</i> setelah pengunjung masuk.</li>
+          <li>Setiap perubahan status otomatis mengirim notifikasi Telegram ke pelanggan!</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Detail Reservasi -->
+<div class="modal-backdrop" id="reservationDetailModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3>Detail Reservasi & Ubah Status</h3>
+      <button type="button" class="modal-close" data-close-modal="reservationDetailModal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div style="background: #f8fafc; border-radius: 10px; padding: 16px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <span style="font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: 600;">Kode Booking:</span>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span id="modalBookingCode" style="font-family: monospace; font-size: 16px; font-weight: 800; color: #065f46;">-</span>
+            <button type="button" id="modalCopyBtn" class="btn btn-secondary btn-sm btn-copy" data-copy="" style="padding: 2px 8px; font-size: 11px;">Salin</button>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 13px;">
+          <div><b>Tgl Kunjungan:</b> <span id="modalVisitDate">-</span></div>
+          <div><b>Paket:</b> <span id="modalTicketName">-</span></div>
+          <div><b>Kategori:</b> <span id="modalTicketCategory">-</span></div>
+          <div><b>Jumlah:</b> <span id="modalQty">-</span></div>
+          <div><b>Total Bayar:</b> <span id="modalTotalPrice" style="font-weight: 700; color: #047857;">-</span></div>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 8px; color: #1e293b;">Data Pemesan</h4>
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px; margin-bottom: 6px;">
+          <span>Nama Pemesan: <b id="modalUserName">-</b></span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+          <span>No WhatsApp: <b id="modalUserPhone">-</b></span>
+          <a id="modalWhatsAppBtn" href="#" target="_blank" class="btn btn-secondary btn-sm" style="color: #15803d; font-size: 11px; padding: 4px 8px;">
+            💬 Chat WA
+          </a>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 8px; color: #1e293b;">Bukti Pembayaran</h4>
+        <div id="modalProofContainer">
+          <span style="font-size: 13px; color: #94a3b8;">Tidak ada bukti pembayaran.</span>
+        </div>
+      </div>
+
+      <form id="updateStatusForm" method="POST" action="">
+        <div class="form-group">
+          <label class="form-label" for="modalStatusSelect">Ubah Status Reservasi</label>
+          <select class="form-control" id="modalStatusSelect" name="status_val">
+            <option value="PENDING">⏳ PENDING (Menunggu Pembayaran)</option>
+            <option value="PAID">💵 PAID (Pembayaran Diterima / Menunggu Validasi)</option>
+            <option value="CONFIRMED">✅ CONFIRMED (Tiket Dikonfirmasi & Aktif)</option>
+            <option value="COMPLETED">🎉 COMPLETED (Tiket Selesai Digunakan)</option>
+            <option value="REJECTED">❌ REJECTED (Reservasi Ditolak / Batal)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="modalAdminNotes">Catatan untuk Pelanggan (Otomatis Dikirim via Telegram)</label>
+          <textarea class="form-control" id="modalAdminNotes" name="admin_notes" placeholder="Contoh: Bukti transfer terverifikasi. Silakan langsung ke loket 2."></textarea>
+        </div>
+
+        <div class="modal-footer" style="padding-left: 0; padding-right: 0; padding-bottom: 0;">
+          <button type="button" class="btn btn-secondary" data-close-modal="reservationDetailModal">Tutup</button>
+          <button type="submit" class="btn btn-primary">Simpan & Kirim Notif ➔</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

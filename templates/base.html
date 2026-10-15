@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ page_title }} - Admin Wisata Ngrembel Asri</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo-icon">🌿</div>
+        <div class="sidebar-logo-text">
+          <h2>Ngrembel Asri</h2>
+          <span>Admin System</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-menu">
+        <span class="menu-category">Menu Utama</span>
+        <a href="/" class="nav-link {% if request.url.path == '/' %}active{% endif %}">
+          <span class="nav-icon">📊</span>
+          <span>Dashboard</span>
+        </a>
+        <a href="/wisata" class="nav-link {% if request.url.path.startswith('/wisata') %}active{% endif %}">
+          <span class="nav-icon">🎟</span>
+          <span>Kelola Wisata & Tiket</span>
+        </a>
+        <a href="/reservations" class="nav-link {% if request.url.path.startswith('/reservations') %}active{% endif %}">
+          <span class="nav-icon">📅</span>
+          <span>Daftar Reservasi</span>
+        </a>
+
+        <span class="menu-category">Pengaturan</span>
+        <a href="/settings" class="nav-link {% if request.url.path.startswith('/settings') %}active{% endif %}">
+          <span class="nav-icon">⚙️</span>
+          <span>Info Wisata & Bayar</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-badge">
+          <div class="user-info">
+            <div class="user-avatar">A</div>
+            <div class="user-details">
+              <h4>{{ admin_name }}</h4>
+              <p>Administrator</p>
+            </div>
+          </div>
+          <a href="/logout" class="logout-btn" title="Keluar dari Admin">🚪</a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Wrapper -->
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div style="display: flex; align-items: center;">
+          <button class="mobile-toggle" id="mobileToggle">☰</button>
+          <div class="topbar-title">
+            <h1>{{ page_title }}</h1>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <div class="bot-status-badge">
+            <span class="status-dot"></span>
+            <span>Telegram Bot Connected</span>
+          </div>
+          <a href="/reservations" class="btn btn-secondary btn-sm">📋 Cek Reservasi</a>
+        </div>
+      </header>
+
+      <main class="content-body">
+        {% if msg %}
+        <div class="alert-toast">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 18px;">✅</span>
+            <span>{{ msg }}</span>
+          </div>
+          <button onclick="this.parentElement.remove()" style="background: none; border: none; font-size: 18px; cursor: pointer; color: #065f46;">×</button>
+        </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+
+  <script src="/static/js/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <h3><span>🎟</span> Daftar Paket Wisata & Tiket Ngrembel Asri</h3>
+    <button type="button" class="btn btn-primary btn-sm" data-open-modal="addWisataModal">
+      + Tambah Paket Wisata
+    </button>
+  </div>
+  <div class="card-body" style="padding: 0;">
+    <div class="table-responsive">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nama Paket / Wahana</th>
+            <th>Kategori</th>
+            <th>Harga (Per Orang)</th>
+            <th>Deskripsi Fasilitas</th>
+            <th>Status</th>
+            <th style="text-align: right;">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in tickets %}
+          <tr>
+            <td>#{{ t.id }}</td>
+            <td>
+              <div style="font-weight: 700; color: #064e3b; font-size: 15px;">{{ t.name }}</div>
+            </td>
+            <td>
+              <span style="font-size: 12px; background: #f1f5f9; padding: 4px 8px; border-radius: 6px; font-weight: 600; color: #475569;">
+                {{ t.category }}
+              </span>
+            </td>
+            <td>
+              <span style="font-weight: 800; color: #047857; font-size: 15px;">
+                Rp {{ "{:,.0f}".format(t.price).replace(",", ".") }}
+              </span>
+            </td>
+            <td style="max-width: 320px;">
+              <span style="font-size: 13px; color: #64748b; line-height: 1.4; display: block;">
+                {{ t.description or '-' }}
+              </span>
+            </td>
+            <td>
+              {% if t.is_active == 1 %}
+              <span class="badge badge-active">● Aktif di Bot</span>
+              {% else %}
+              <span class="badge badge-inactive">○ Nonaktif</span>
+              {% endif %}
+            </td>
+            <td style="text-align: right;">
+              <div style="display: flex; gap: 6px; justify-content: flex-end;">
+                <button 
+                  type="button"
+                  class="btn btn-secondary btn-sm btn-edit-wisata"
+                  data-id="{{ t.id }}"
+                  data-name="{{ t.name }}"
+                  data-category="{{ t.category }}"
+                  data-price="{{ t.price }}"
+                  data-description="{{ t.description or '' }}"
+                  data-active="{{ t.is_active }}">
+                  ✏️ Edit
+                </button>
+                <form method="POST" action="/wisata/delete/{{ t.id }}" onsubmit="return confirm('Apakah Anda yakin ingin menghapus paket wisata ini?')">
+                  <button type="submit" class="btn btn-danger btn-sm">🗑 Hapus</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" style="text-align: center; padding: 40px; color: #94a3b8;">
+              Belum ada paket wisata. Klik tombol <b>+ Tambah Paket Wisata</b> untuk membuat paket pertama.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Tambah Wisata -->
+<div class="modal-backdrop" id="addWisataModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3>Tambah Paket Wisata / Tiket Baru</h3>
+      <button type="button" class="modal-close" data-close-modal="addWisataModal">&times;</button>
+    </div>
+    <form method="POST" action="/wisata/add">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Nama Paket / Tiket *</label>
+          <input type="text" name="name" class="form-control" placeholder="Contoh: Tiket Masuk Reguler (Weekend)" required>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div class="form-group">
+            <label class="form-label">Kategori *</label>
+            <select name="category" class="form-control" required>
+              <option value="Tiket Masuk">Tiket Masuk</option>
+              <option value="Paket Wahana">Paket Wahana</option>
+              <option value="Paket Gathering">Paket Gathering / Outbound</option>
+              <option value="Paket Kuliner">Paket Kuliner & Mancing</option>
+              <option value="Paket Anak">Paket Anak</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Harga Satuan (Rp) *</label>
+            <input type="number" name="price" class="form-control" placeholder="Contoh: 9000" min="0" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Deskripsi & Fasilitas Termasuk</label>
+          <textarea name="description" class="form-control" placeholder="Tuliskan fasilitas yang didapat pengunjung (misal: kolam renang anak, mini zoo, flying fox)..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Status Tayang di Bot</label>
+          <select name="is_active" class="form-control">
+            <option value="1">Aktif (Bisa dipesan pelanggan di Bot)</option>
+            <option value="0">Nonaktif (Sembunyikan dari Bot)</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-close-modal="addWisataModal">Batal</button>
+        <button type="submit" class="btn btn-primary">Simpan Paket Wisata</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Edit Wisata -->
+<div class="modal-backdrop" id="editWisataModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3>Edit Paket Wisata</h3>
+      <button type="button" class="modal-close" data-close-modal="editWisataModal">&times;</button>
+    </div>
+    <form id="editWisataForm" method="POST" action="">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Nama Paket / Tiket *</label>
+          <input type="text" id="editWisataName" name="name" class="form-control" required>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div class="form-group">
+            <label class="form-label">Kategori *</label>
+            <select id="editWisataCategory" name="category" class="form-control" required>
+              <option value="Tiket Masuk">Tiket Masuk</option>
+              <option value="Paket Wahana">Paket Wahana</option>
+              <option value="Paket Gathering">Paket Gathering / Outbound</option>
+              <option value="Paket Kuliner">Paket Kuliner & Mancing</option>
+              <option value="Paket Anak">Paket Anak</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Harga Satuan (Rp) *</label>
+            <input type="number" id="editWisataPrice" name="price" class="form-control" min="0" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Deskripsi & Fasilitas Termasuk</label>
+          <textarea id="editWisataDesc" name="description" class="form-control"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Status Tayang di Bot</label>
+          <select id="editWisataActive" name="is_active" class="form-control">
+            <option value="1">Aktif (Bisa dipesan di Bot)</option>
+            <option value="0">Nonaktif (Sembunyikan dari Bot)</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-close-modal="editWisataModal">Batal</button>
+        <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
